@@ -1,3 +1,5 @@
+#ifdef RCT_NEW_ARCH_ENABLED
+
 #include <array>
 #include <jsi/jsi.h>
 
@@ -41,3 +43,5 @@ public:
 };
 
 }
+
+#endif
