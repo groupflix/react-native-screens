@@ -16,7 +16,7 @@ While transitioning between views we may want to activate a second screen for th
 ## `<Screen/>`
 
 This component is a container for views we want to display on a navigation screen.
-It is designed to only be rendered as a direct child of `ScreenContainer`.
+It is designed to only be rendered as a direct child of `ScreenContainer` or `ScreenStack`.
 In addition to plain React Native [View props](http://facebook.github.io/react-native/docs/view#props) this component only accepts a single additional property called `activityState`.
 When `activityState` is set to `0`, the parent container will detach its views from the native view hierarchy. When `activityState` is set to `1`, the `Screen` will stay attached, but on iOS it will not respond to touches. We only want to set `activityState` to `1` for during the transition or e.g. for modal presentation, where the previous screen should be visible, but not interactive. When `activityState` is set to `2`, the views will be attached and will respond to touches as long as the parent container is attached too. When one of the `Screen` components get the `activityState` value set to `2`, we interpret it as the end of the transition.
 
@@ -30,17 +30,23 @@ When `activityState` is set to `0`, the parent container will detach its views f
 </ScreenContainer>
 ```
 
+When used in `<ScreenStack />` `activityState` can only be increased. The checks are added (in both native sides and JS part) to prevent situation when it's being removed, but still exists in in React Tree or if someones tries to preload already displayed screen.
+
 ## `<ScreenStack>`
 
-Screen stack component expects one or more `Screen` components as direct children and renders them in a platform-native stack container (for iOS it is `UINavigationController` and for Android inside `Fragment` container). For `Screen` components placed as children of `ScreenStack` the `activityState` property is ignored and instead the screen that corresponds to the last child is rendered as active. All types of updates done to the list of children are acceptable when the top element is exchanged the container will use platform default (unless customized) animation to transition between screens.
+Screen stack component expects one or more `ScreenStackItem` components as direct children and renders them in a platform-native stack container (for iOS it is `UINavigationController` and for Android inside `Fragment` container). For `ScreenStackItem` components placed as children of `ScreenStack` the `activityState` property is ignored and instead the screen that corresponds to the last child is rendered as active. All types of updates done to the list of children are acceptable when the top element is exchanged the container will use platform default (unless customized) animation to transition between screens.
 
-Below is the list of additional properties that can be used for `Screen` component:
+## `<ScreenStackItem>`
+
+The `ScreenStackItem` component is a convenience wrapper around `Screen` that's meant to be used as a direct child of `ScreenStack`. It takes care of setting the appropriate props necessary to work with `ScreenStack`, adds functionality such as displaying header in modals, as well as workarounds such as proper handling of `LogBox`. It is recommended to use `ScreenStackItem` instead of `Screen` when working with `ScreenStack`.
+
+Below is the list of additional properties that can be used for `ScreenStackItem` component:
 
 ### `customAnimationOnSwipe` (iOS only)
 
 Boolean indicating that swipe dismissal should trigger animation provided by `stackAnimation`. Defaults to `false`.
 
-### freezeOnBlur
+### `freezeOnBlur`
 
 Whether inactive screens should be suspended from re-rendering.
 
@@ -49,6 +55,12 @@ Defaults to `false`. When `enableFreeze()` is run at the top of the application 
 ### `fullScreenSwipeEnabled` (iOS only)
 
 Boolean indicating whether the swipe gesture should work on whole screen. Swiping with this option results in the same transition animation as `simple_push` by default. It can be changed to other custom animations with `customAnimationOnSwipe` prop, but default iOS swipe animation is not achievable due to usage of custom recognizer. Defaults to `false`.
+
+### `fullScreenSwipeShadowEnabled` (iOS only)
+
+Boolean indicating whether the full screen dismiss gesture has shadow under view during transition. The gesture uses custom transition and thus
+doesn't have a shadow by default. When enabled, a custom shadow view is added during the transition which tries to mimic the
+default iOS shadow. Defaults to `true`.
 
 ### `gestureEnabled` (iOS only)
 
@@ -143,18 +155,25 @@ Sets the current screen's available orientations and forces rotation if current 
 - `landscape_right`
 
 Defaults to `default` on iOS.
-### `sheetAllowedDetents` (iOS only)
 
-Describes heights where a sheet can rest. 
-Works only when `stackPresentation` is set to `formSheet`.
+### `sheetAllowedDetents`
 
-Available values:
+Describes heights where a sheet can rest.
+Works only when `presentation` is set to `formSheet`.
 
-- `large` - only large detent level will be allowed
-- `medium` - only medium detent level will be allowed
-- `all` - all detent levels will be allowed
+Heights should be described as fraction (a number from `[0, 1]` interval) of screen height / maximum detent height.
+There is also possibility to specify `fitToContents` literal, which intents to set the sheet height
+to the height of its contents.
 
-Defaults to `large`.
+Please note that the array **must** be sorted in ascending order.
+
+There are also legacy & **deprecated** options available:
+
+- `medium` - corresponds to `[0.5]` detent value, around half of the screen height,
+- `large` - corresponds to `[1.0]` detent value, maximum height,
+- `all` - corresponds to `[0.5, 1.0]` value, the name is deceiving due to compatibility reasons.
+
+Defaults to `[1.0]` literal.
 
 ### `sheetExpandsWhenScrolledToEdge` (iOS only)
 
@@ -163,7 +182,7 @@ Works only when `stackPresentation` is set to `formSheet`.
 
 Defaults to `true`.
 
-### `sheetCornerRadius (iOS only)
+### `sheetCornerRadius`
 
 The corner radius that the sheet will try to render with.
 Works only when `stackPresentation` is set to `formSheet`.
@@ -178,18 +197,23 @@ Boolean indicating whether the sheet shows a grabber at the top.
 Works only when `stackPresentation` is set to `formSheet`.
 Defaults to `false`.
 
-### `sheetLargestUndimmedDetent` (iOS only)
+### `sheetLargestUndimmedDetent`
 
- The largest sheet detent for which a view underneath won't be dimmed.
- Works only when `stackPresentation` is set to `formSheet`.
+The largest sheet detent for which a view underneath won't be dimmed.
+Works only when `stackPresentation` is set to `formSheet`.
 
- If this prop is set to:
+This prop can be set to an number, which indicates index of detent in `sheetAllowedDetents` array for which
+there won't be a dimming view beneath the sheet.
 
- - `large` - the view underneath won't be dimmed at any detent level
- - `medium` - the view underneath will be dimmed only when detent level is `large`
- - `all` - the view underneath will be dimmed for any detent level
+Additionaly there are following options available:
 
- Defaults to `all`.
+- `none` - there will be dimming view for all detents levels,
+- `largest` - there won't be a dimming view for any detent level.
+
+There also legacy & **deprecated** prop values available: `medium`, `large` (don't confuse with `largest`), `all`, which work in tandem with
+corresponding legacy prop values for `sheetAllowedDetents` prop.
+
+Defaults to `none`, indicating that the dimming view should be always present.
 
 ### `stackAnimation`
 
@@ -199,11 +223,12 @@ Allows for the customization of how the given screen should appear/disappear whe
 - `"fade"` – fades screen in or out
 - `fade_from_bottom` – performs a fade from bottom animation
 - `"flip"` – flips the screen, requires `stackPresentation: "modal"` (iOS only)
-- `"simple_push"` – performs a default animation, but without shadow and native header transition (iOS only)
+- `"simple_push"` – performs a default animation, but without native header transition (iOS only)
 - `"slide_from_bottom"` - slide in the new screen from bottom to top
 - `"slide_from_right"` - slide in the new screen from right to left (Android only, resolves to default transition on iOS)
 - `"slide_from_left"` - slide in the new screen from left to right
-- `"ios"` - iOS like slide in animation (Android only, resolves to default transition on iOS)
+- `"ios_from_right"` - iOS like slide in animation. pushes in the new screen from right to left (Android only, resolves to default transition on iOS)
+- `"ios_from_left"` - iOS like slide in animation. pushes in the new screen from left to right (Android only, resolves to default transition on iOS)
 - `"none"` – the screen appears/disappears without an animation
 
 ### `stackPresentation`
@@ -237,7 +262,7 @@ For Android:
 
 ### `statusBarAnimation`
 
-Sets the status bar animation (similar to the `StatusBar` component). Requires enabling (or deleting) `View controller-based status bar appearance` in your Info.plist file. Possible values: `fade`, `none`, `slide`. On Android, this prop considers the transition of changing status bar color (see https://reactnative.dev/docs/statusbar#animated). There will be no animation if `none` provided.
+Sets the status bar animation (similar to the `StatusBar` component). Requires enabling (or deleting) `View controller-based status bar appearance` in your Info.plist file. Possible values: `fade`, `none`, `slide`. On Android, this prop considers the transition of changing status bar color (see <https://reactnative.dev/docs/statusbar#animated>). There will be no animation if `none` provided.
 
 Defaults to `fade` on iOS and `none` on Android.
 
@@ -272,7 +297,7 @@ When using `vertical` option, options `fullScreenSwipeEnabled: true`, `customAni
 
 ### `transitionDuration` (iOS only)
 
-Changes the duration (in milliseconds) of `slide_from_bottom`, `fade_from_bottom`, `fade` and `simple_push` transitions on iOS. Defaults to `350`.
+Changes the duration (in milliseconds) of `slide_from_bottom`, `fade_from_bottom`, `fade` and `simple_push` transitions on iOS. Defaults to `500`.
 
 The duration of `default` and `flip` transitions isn't customizable.
 
@@ -342,7 +367,7 @@ function Home() {
     () =>
       (reaProgress.progress.value < 0.5
         ? reaProgress.progress.value * 50
-        : (1 - reaProgress.progress.value) * 50) + 50
+        : (1 - reaProgress.progress.value) * 50) + 50,
   );
   const reaStyle = useAnimatedStyle(() => {
     return {
@@ -354,6 +379,51 @@ function Home() {
 
   return <Animated.View style={reaStyle} />;
 }
+```
+
+### `unstable_sheetFooter` (Android only)
+
+Footer component that can be used alongside form sheet stack presentation style.
+
+This option is provided, because due to implementation details it might be problematic
+to implement such layout with JS-only code.
+
+Please note that this prop is marked as unstable and might be subject of breaking changes,
+even removal.
+
+Currently supported on Android only.
+
+### `contentStyle`
+
+Style object that will be applied to the view that wraps the content of the screen.
+
+### `headerConfig`
+
+The `headerConfig` prop is an alternative to `ScreenStackHeaderConfig` component. It is recommended to use `headerConfig` prop instead of `ScreenStackHeaderConfig` so that `ScreenStackItem` can configure the screen appropriately.
+
+It takes an object that can contain the props accepted by `ScreenStackHeaderConfig` component:
+
+```jsx
+<ScreenStack>
+  <ScreenStackItem
+    headerConfig={{
+      title: 'First screen',
+      headerLargeTitle: true,
+      children: <>
+        <ScreenStackHeaderRightView>
+          <Button title="Save" />
+        </ScreenStackHeaderRightView>,
+      </>,
+    }}>
+    {/* content of the first screen */}
+  </ScreenStackItem>
+  <ScreenStackItem
+    headerConfig={{
+      title: 'Second screen',
+    }}>
+    {/* content of the second screen */}
+  </ScreenStackItem>
+</ScreenStackIte>
 ```
 
 ## `<ScreenStackHeaderConfig>`
@@ -444,6 +514,14 @@ Controls whether the stack should be in `rtl` or `ltr` form.
 ### `disableBackButtonMenu` (iOS only)
 
 Boolean indicating whether to show the menu on longPress of iOS >= 14 back button.
+
+### `backButtonDisplayMode` (iOS only)
+
+Enum value indicating display mode of **default** back button. It works on iOS >= 14, and is used only when none of: `backTitleFontFamily`, `backTitleFontSize`, `disableBackButtonMenu` or `backTitle` is set. Otherwise, when the button is customized, under the hood we use iOS native `backButtonItem` which overrides `backButtonDisplayMode`. Read more [#2123](https://github.com/software-mansion/react-native-screens/pull/2123). Possible options:
+
+- `default` – show given back button previous controller title, system generic or just icon based on available space
+- `generic` – show given system generic or just icon based on available space
+- `minimal` – show just an icon
 
 ### `hidden`
 
@@ -555,4 +633,4 @@ Please refer to [SampleLifecycleAwareViewManager.java](https://github.com/softwa
 
 ## Android hardware back button
 
-In order to properly handle the hardware back button on Android, you should implement the navigation logic concerning it. You can see an example of how it is done in `react-navigation` here: https://github.com/react-navigation/react-navigation/blob/6cba517b74f5fd092db21d5574b558ef2d80897b/packages/native/src/useBackButton.tsx.
+In order to properly handle the hardware back button on Android, you should implement the navigation logic concerning it. You can see an example of how it is done in `react-navigation` here: <https://github.com/react-navigation/react-navigation/blob/6cba517b74f5fd092db21d5574b558ef2d80897b/packages/native/src/useBackButton.tsx>.

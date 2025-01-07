@@ -1,13 +1,9 @@
 module.exports = {
   extends: [
+    '@react-native',
     'standard',
-    'plugin:import/errors',
-    'plugin:import/warnings',
-    'plugin:react/recommended',
     'prettier',
   ],
-
-  plugins: ['react-native', 'react-hooks'],
 
   env: {
     'react-native/react-native': true,
@@ -21,9 +17,9 @@ module.exports = {
       'react-native-screens/gesture-handler',
     ],
     'import/ignore': [
-      'node_modules/react-native/index\\.js$', 
+      'node_modules/react-native/index\\.js$',
       'react-native/Libraries/Utilities/codegenNativeComponent.*',
-      'react-native/Libraries/Types/CodegenTypes.*'
+      'react-native/Libraries/Types/CodegenTypes.*',
     ],
     'import/resolver': {
       node: {
@@ -43,10 +39,6 @@ module.exports = {
   },
 
   overrides: [
-    {
-      files: ['*.{js,jsx}'],
-      parser: 'babel-eslint',
-    },
     {
       files: ['*.{ts,tsx}'],
       parser: '@typescript-eslint/parser',
