@@ -44,26 +44,26 @@ class BottomSheetDialogRootView(
 
     override fun onInterceptTouchEvent(event: MotionEvent): Boolean {
         jsTouchDispatcher.handleTouchEvent(event, eventDispatcher)
-        jsPointerDispatcher?.handleMotionEvent(event, eventDispatcher, true)
+        jsPointerDispatcher?.handleMotionEvent(event, eventDispatcher)
         return super.onInterceptTouchEvent(event)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         jsTouchDispatcher.handleTouchEvent(event, eventDispatcher)
-        jsPointerDispatcher?.handleMotionEvent(event, eventDispatcher, false)
+        jsPointerDispatcher?.handleMotionEvent(event, eventDispatcher)
         super.onTouchEvent(event)
         return true
     }
 
     override fun onInterceptHoverEvent(event: MotionEvent): Boolean {
-        jsPointerDispatcher?.handleMotionEvent(event, eventDispatcher, true)
+        jsPointerDispatcher?.handleMotionEvent(event, eventDispatcher)
         // This is how DialogRootViewGroup implements this, it might be a copy-paste mistake
         // on their side.
         return super.onHoverEvent(event)
     }
 
     override fun onHoverEvent(event: MotionEvent): Boolean {
-        jsPointerDispatcher?.handleMotionEvent(event, eventDispatcher, false)
+        jsPointerDispatcher?.handleMotionEvent(event, eventDispatcher)
         return super.onHoverEvent(event)
     }
 
