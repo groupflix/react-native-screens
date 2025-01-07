@@ -30,9 +30,7 @@ RCT_EXPORT_MODULE()
 
 - (NSDictionary *)constantsToExport
 {
-#ifdef RCT_NEW_ARCH_ENABLED
   [self installHostObject];
-#endif
   return @{};
 }
 
@@ -131,6 +129,7 @@ RCT_EXPORT_MODULE()
   [self installHostObject];
   return std::make_shared<facebook::react::NativeScreensModuleSpecJSI>(params);
 }
+#endif
 
 - (void)installHostObject
 {
@@ -169,7 +168,6 @@ RCT_EXPORT_MODULE()
     }
   }
 }
-#endif
 
 @end
 

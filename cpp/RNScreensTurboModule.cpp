@@ -1,5 +1,3 @@
-#ifdef RCT_NEW_ARCH_ENABLED
-
 #include "RNScreensTurboModule.h"
 
 using namespace facebook;
@@ -107,5 +105,3 @@ if (count < 1) {
 }
 
 }
-
-#endif
